@@ -56,6 +56,13 @@ mktempdir() do tmpdir; mktempdir() do depot
         withenv("JULIA_LOAD_PATH" => tmpdir) do # Should work even though Pkg is not in LOAD_PATH
             @test success(`$(test_cmd) --update st -m`)
         end
+        if isdefined(Pkg, :OFFLINE_MODE)
+            @test success(`$(test_cmd) --offline --project=$tmpdir rm Example`)
+            @test success(`$(test_cmd) --offline --project=$tmpdir add Example=7876af07-990d-54b4-ab0e-23690620f79a`)
+        else
+            @test !success(`$(test_cmd) --offline --project=$tmpdir rm Example`)
+            @test !success(`$(test_cmd) --offline --project=$tmpdir add Example=7876af07-990d-54b4-ab0e-23690620f79a`)
+        end
         # Smoke test all Pkg commands in interpreted mode
         @test success(`$(test_cmd) activate foo`)
         @test success(`$(test_cmd) add SpecialFunctions=276daf66-3868-5448-9aa4-cd146d93841b`)
@@ -92,7 +99,7 @@ mktempdir() do tmpdir; mktempdir() do depot
         @test occursin("No input arguments, showing help:", read(stdout, String))
         @test occursin("jlpkg - command line interface", read(stdout, String))
         @test success(pipeline(`$(test_cmd) --version`, stdout=stdout, stderr=stderr))
-        @test occursin("jlpkg version $(jlpkg_version), julia version $(VERSION)", read(stdout, String))
+        @test occursin("jlpkg version $(jlpkg_version), julia version $(VERSION).", read(stdout, String))
         @test isempty(read(stderr, String))
         # Error paths
         @test !success(pipeline(`$(test_cmd) --project=$tmpdir rm`, stdout=stdout, stderr=stderr))

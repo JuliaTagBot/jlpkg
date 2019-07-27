@@ -2,11 +2,11 @@
 const first_cmd_idx = something(findfirst(x -> !startswith(x, "--"), ARGS), length(ARGS)+1)
 const JLPKG_ARGS = ARGS[1:first_cmd_idx-1]
 const PKG_REPL_ARGS = ARGS[first_cmd_idx:end]
-const VALID_JLPKG_ARGS = ["--project", "--update", "--version", "--help"]
+const VALID_JLPKG_ARGS = ["--project", "--update", "--version", "--help", "--offline"]
 
 # Parse --version option
 if "--version" in JLPKG_ARGS
-    println("jlpkg version 1.0.3, julia version $(VERSION)")
+    println("jlpkg version 1.0.3, julia version $(VERSION).")
     exit(0)
 end
 
@@ -50,6 +50,9 @@ if isempty(ARGS) || isempty(PKG_REPL_ARGS) || "--help" in JLPKG_ARGS ||
 
            --update
                Allow the subsequent commands to update package registries.
+
+           --offline
+                Enable Pkg's offline mode (requires Julia 1.3 or later).
 
            --version
                Show jlpkg and julia version numbers.
@@ -107,9 +110,20 @@ end
 
 # Parse --update option
 let
-    idx = findlast(==("--update"), JLPKG_ARGS)
-    if idx === nothing
+    if findlast(==("--update"), JLPKG_ARGS) === nothing
         Pkg.UPDATED_REGISTRY_THIS_SESSION[] = true
+    end
+end
+
+# Parse --offline option
+let
+    if findlast(==("--offline"), JLPKG_ARGS) !== nothing
+        if isdefined(Pkg, :OFFLINE_MODE)
+            Pkg.OFFLINE_MODE[] = true
+        else
+            println("Offline mode requires Julia 1.3 or later.")
+            exit(1)
+        end
     end
 end
 
